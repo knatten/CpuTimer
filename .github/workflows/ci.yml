@@ -1,0 +1,27 @@
+name: CI
+on: [push]
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration: [Debug, Release]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - run: ./ci/setup/setup.sh
+      - run: ./ci/build-and-test.sh ${{matrix.configuration}}
+  required-checks:
+    name: Required checks
+    if: ${{ always() }}
+    runs-on: ubuntu-22.04
+    needs:
+      - test
+    steps:
+      - run: |
+          result="${{ needs.test.result }}"
+          if [[ $result == "success" ]]; then
+            exit 0
+          else
+            exit 1
+          fi

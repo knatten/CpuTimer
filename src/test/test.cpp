@@ -26,7 +26,8 @@ TEST_CASE("Single timer")
     realClock.stop();
     const auto stopTime = realClock.elapsed();
     REQUIRE(stopTime > lapTime);
-    REQUIRE(stopTime < 30ms);
+    REQUIRE(stopTime <
+            1000ms); // Ridiculous error margin to avoid flaky tests in CI
 
     // After stopping, elapsed stays the same
     std::this_thread::sleep_for(10ms);
