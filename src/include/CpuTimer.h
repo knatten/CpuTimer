@@ -69,8 +69,8 @@ namespace knatten::CpuTimer
         {
             if (state == State::notStarted)
             {
-                throw std::runtime_error(
-                    "Trying to get elapsed time of a timer which was not started");
+                throw std::runtime_error("Trying to get elapsed time of a "
+                                         "timer which was not started");
             }
             const auto until = [this]()
             {

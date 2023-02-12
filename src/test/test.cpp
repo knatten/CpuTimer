@@ -41,7 +41,6 @@ TEST_CASE("Single timer")
     realTimer.start();
     REQUIRE_THAT(realTimer.elapsed<std::chrono::milliseconds>().count(),
                  WithinAbs(10, 10));
-
 }
 
 TEST_CASE("Stopping without starting throws")
@@ -53,8 +52,9 @@ TEST_CASE("Stopping without starting throws")
 TEST_CASE("Checking elapsed time without starting throws")
 {
     RealTimer timer;
-    REQUIRE_THROWS_WITH(timer.elapsed(),
-                        Equals("Trying to get elapsed time of a timer which was not started"));
+    REQUIRE_THROWS_WITH(
+        timer.elapsed(),
+        Equals("Trying to get elapsed time of a timer which was not started"));
 }
 
 TEST_CASE("Full timer")
