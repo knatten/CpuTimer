@@ -35,6 +35,18 @@ namespace knatten::CpuTimer
         {
             static constexpr auto type = CLOCK_THREAD_CPUTIME_ID;
         };
+
+        template <Type ClockType, typename Duration = std::chrono::nanoseconds>
+        Duration timeSince(const timespec &startTime)
+        {
+            timespec now;
+            clock_gettime(Detail::TypeTrait<ClockType>::type, &now);
+            const auto ns{(now.tv_sec - startTime.tv_sec) * 1000000000 +
+                          (now.tv_nsec - startTime.tv_nsec)};
+            return std::chrono::duration_cast<Duration>(
+                std::chrono::nanoseconds{ns});
+        }
+
     }; // namespace Detail
 
     template <Type ClockType> class SingleTimer
@@ -58,12 +70,7 @@ namespace knatten::CpuTimer
                 throw std::runtime_error("Trying to get elapsed time of a "
                                          "timer which was not started");
             }
-            timespec now;
-            clock_gettime(Detail::TypeTrait<ClockType>::type, &now);
-            const auto ns{(now.tv_sec - startTime.tv_sec) * 1000000000 +
-                          (now.tv_nsec - startTime.tv_nsec)};
-            return std::chrono::duration_cast<Duration>(
-                std::chrono::nanoseconds{ns});
+            return Detail::timeSince<ClockType, Duration>(startTime);
         }
 
       private:
@@ -89,9 +96,12 @@ namespace knatten::CpuTimer
         // Can be called multiple times, which restarts the timer.
         void start()
         {
-            realTimer.start();
-            processTimer.start();
-            threadTimer.start();
+            state = Detail::State::started;
+            clock_gettime(Detail::TypeTrait<Type::real>::type, &realStartTime);
+            clock_gettime(Detail::TypeTrait<Type::process>::type,
+                          &processStartTime);
+            clock_gettime(Detail::TypeTrait<Type::thread>::type,
+                          &threadStartTime);
         }
 
         // Get elapsed time.
@@ -99,15 +109,24 @@ namespace knatten::CpuTimer
         template <typename Duration = std::chrono::nanoseconds>
         Result<Duration> elapsed() const
         {
-            return Result<Duration>{realTimer.template elapsed<Duration>(),
-                                    processTimer.template elapsed<Duration>(),
-                                    threadTimer.template elapsed<Duration>()};
+            if (state == Detail::State::notStarted)
+            {
+                throw std::runtime_error("Trying to get elapsed time of a "
+                                         "timer which was not started");
+            }
+            return Result<Duration>{
+                Detail::timeSince<Type::real, Duration>(realStartTime),
+                Detail::timeSince<Type::process, Duration>(processStartTime),
+                Detail::timeSince<Type::thread, Duration>(threadStartTime)};
         }
 
       private:
-        RealTimer realTimer;
-        ProcessTimer processTimer;
-        ThreadTimer threadTimer;
+        // Do not reuse SingleTimers here, to avoid triplicated if checks
+        // Instead live with some duplication
+        timespec realStartTime;
+        timespec processStartTime;
+        timespec threadStartTime;
+        Detail::State state;
     };
 
 } // namespace knatten::CpuTimer
