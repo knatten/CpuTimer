@@ -28,6 +28,7 @@ TEST_CASE("Single timer")
     // Stop time
     std::this_thread::sleep_for(20ms);
     realTimer.stop();
+    REQUIRE_NOTHROW(realTimer.stop());
     const auto stopTime = realTimer.elapsed<std::chrono::milliseconds>();
     REQUIRE(stopTime > lapTime);
     REQUIRE_THAT(stopTime.count(), WithinAbs(50, 10));
@@ -35,6 +36,12 @@ TEST_CASE("Single timer")
     // After stopping, elapsed stays the same
     std::this_thread::sleep_for(10ms);
     REQUIRE(stopTime == realTimer.elapsed<std::chrono::milliseconds>());
+
+    // Starting again re-starts the timer
+    realTimer.start();
+    REQUIRE_THAT(realTimer.elapsed<std::chrono::milliseconds>().count(),
+                 WithinAbs(10, 10));
+
 }
 
 TEST_CASE("Stopping without starting throws")
@@ -47,7 +54,7 @@ TEST_CASE("Checking elapsed time without starting throws")
 {
     RealTimer timer;
     REQUIRE_THROWS_WITH(timer.elapsed(),
-                        Equals("Trying to stop a timer which was not started"));
+                        Equals("Trying to get elapsed time of a timer which was not started"));
 }
 
 TEST_CASE("Full timer")
@@ -67,6 +74,7 @@ TEST_CASE("Full timer")
     // Stop time
     std::this_thread::sleep_for(20ms);
     timer.stop();
+    REQUIRE_NOTHROW(timer.stop());
     const auto stopTime = timer.elapsed<std::chrono::milliseconds>();
     REQUIRE_THAT(stopTime.realTime.count(),
                  WithinAbs(lapTime.realTime.count() + 30, 10));
@@ -84,6 +92,15 @@ TEST_CASE("Full timer")
             timer.elapsed<std::chrono::milliseconds>().processTime);
     REQUIRE(stopTime.threadTime ==
             timer.elapsed<std::chrono::milliseconds>().threadTime);
+
+    // Starting again re-starts the timer
+    timer.start();
+    const auto restartedTime = timer.elapsed<std::chrono::milliseconds>();
+    REQUIRE_THAT(restartedTime.realTime.count(), WithinAbs(10, 10));
+    // Not affected by sleep:
+    REQUIRE_THAT(restartedTime.processTime.count(), WithinAbs(10, 10));
+    // Not affected by sleep:
+    REQUIRE_THAT(restartedTime.threadTime.count(), WithinAbs(10, 10));
 }
 
 volatile int doNotOptimize;
