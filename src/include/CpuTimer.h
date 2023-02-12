@@ -58,7 +58,7 @@ namespace knatten::CpuTimer
         // returns the time elapsed until the time when it was stopped.
         // Throws: std::runtime_error if the timer was not started
         template <typename Duration = std::chrono::nanoseconds>
-        Duration elapsed()
+        Duration elapsed() const
         {
             assertStarted();
             const auto until = [this]()
@@ -84,7 +84,7 @@ namespace knatten::CpuTimer
         std::optional<timespec> startTime;
         std::optional<timespec> stopTime;
 
-        void assertStarted()
+        void assertStarted() const
         {
             if (!startTime)
             {
@@ -92,6 +92,48 @@ namespace knatten::CpuTimer
                     "Trying to stop a timer which was not started");
             }
         }
+    };
+
+    using RealTimer = SingleTimer<Type::real>;
+    using ProcessTimer = SingleTimer<Type::process>;
+    using ThreadTimer = SingleTimer<Type::thread>;
+
+    class Timer
+    {
+        template <typename Duration> struct Result
+        {
+            Duration realTime;
+            Duration processTime;
+            Duration threadTime;
+        };
+
+      public:
+        void start()
+        {
+            realTimer.start();
+            processTimer.start();
+            threadTimer.start();
+        }
+
+        void stop()
+        {
+            realTimer.stop();
+            processTimer.stop();
+            threadTimer.stop();
+        }
+
+        template <typename Duration = std::chrono::nanoseconds>
+        Result<Duration> elapsed() const
+        {
+            return Result<Duration>{realTimer.template elapsed<Duration>(),
+                                    processTimer.template elapsed<Duration>(),
+                                    threadTimer.template elapsed<Duration>()};
+        }
+
+      private:
+        RealTimer realTimer;
+        ProcessTimer processTimer;
+        ThreadTimer threadTimer;
     };
 
 } // namespace knatten::CpuTimer
