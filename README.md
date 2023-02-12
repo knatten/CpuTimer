@@ -11,7 +11,7 @@ Only tested on Linux and macOS
 
 ## Usage
 
-Just copy [src/include/CpuClock.h](src/include/CpuClock.h) into your project
+Just copy [src/include/CpuTimer.h](src/include/CpuTimer.h) into your project
 
 ## Building the full project with tests
 

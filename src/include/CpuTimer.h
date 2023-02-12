@@ -5,7 +5,7 @@
 #include <iostream>
 #include <optional>
 
-namespace CpuClock
+namespace knatten::CpuTimer
 {
     enum class Type
     {
@@ -56,7 +56,7 @@ namespace CpuClock
         // If the timer was not previously stopped, returns the elapsed "lap"
         // time until the current time. If the timer was previously stopped,
         // returns the time elapsed until the time when it was stopped.
-        // Throws: std::runtime_error if the clock was not started
+        // Throws: std::runtime_error if the timer was not started
         template <typename Duration = std::chrono::nanoseconds>
         Duration elapsed()
         {
@@ -89,8 +89,9 @@ namespace CpuClock
             if (!startTime)
             {
                 throw std::runtime_error(
-                    "Trying to stop a clock which was not started");
+                    "Trying to stop a timer which was not started");
             }
         }
     };
-} // namespace CpuClock
+
+} // namespace knatten::CpuTimer
