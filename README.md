@@ -1,6 +1,6 @@
 # CpuTime
 
-C++17 header only timer library (`clock_gettime` wrapper)
+C++11 header only timer library (`clock_gettime` wrapper)
 
 Allows you to measure
 - Real time spent

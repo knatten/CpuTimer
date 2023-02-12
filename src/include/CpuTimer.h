@@ -1,9 +1,9 @@
 #pragma once
 
 #include <chrono>
+#include <cstdint>
 #include <ctime>
 #include <iostream>
-#include <optional>
 
 namespace knatten::CpuTimer
 {
@@ -12,6 +12,12 @@ namespace knatten::CpuTimer
         real,
         process,
         thread
+    };
+    enum class State : uint8_t
+    {
+        notStarted,
+        started,
+        stopped
     };
     namespace Detail
     {
@@ -37,19 +43,20 @@ namespace knatten::CpuTimer
       public:
         void start()
         {
-            if (!startTime)
-            {
-                startTime.template emplace();
-            }
-            clock_gettime(Detail::TypeTrait<ClockType>::type, &(*startTime));
+            state = State::started;
+            clock_gettime(Detail::TypeTrait<ClockType>::type, &startTime);
         }
 
         // Throws: std::runtime_error if the clock was not started
         void stop()
         {
-            assertStarted();
-            stopTime.template emplace();
-            clock_gettime(Detail::TypeTrait<ClockType>::type, &(*stopTime));
+            if (state == State::notStarted)
+            {
+                throw std::runtime_error(
+                    "Trying to stop a timer which was not started");
+            }
+            state = State::stopped;
+            clock_gettime(Detail::TypeTrait<ClockType>::type, &stopTime);
         }
 
         // Get elapsed time.
@@ -60,38 +67,34 @@ namespace knatten::CpuTimer
         template <typename Duration = std::chrono::nanoseconds>
         Duration elapsed() const
         {
-            assertStarted();
+            if (state == State::notStarted)
+            {
+                throw std::runtime_error(
+                    "Trying to get elapsed time of a timer which was not started");
+            }
             const auto until = [this]()
             {
-                if (stopTime.has_value())
+                if (state == State::stopped)
                 {
-                    return *stopTime;
+                    return stopTime;
                 }
                 else
                 {
-                    timespec ts;
-                    clock_gettime(Detail::TypeTrait<ClockType>::type, &ts);
-                    return ts;
+                    timespec now;
+                    clock_gettime(Detail::TypeTrait<ClockType>::type, &now);
+                    return now;
                 }
             }();
-            const auto ns{(until.tv_sec - startTime->tv_sec) * 1000000000 +
-                          (until.tv_nsec - startTime->tv_nsec)};
+            const auto ns{(until.tv_sec - startTime.tv_sec) * 1000000000 +
+                          (until.tv_nsec - startTime.tv_nsec)};
             return std::chrono::duration_cast<Duration>(
                 std::chrono::nanoseconds{ns});
         }
 
       private:
-        std::optional<timespec> startTime;
-        std::optional<timespec> stopTime;
-
-        void assertStarted() const
-        {
-            if (!startTime)
-            {
-                throw std::runtime_error(
-                    "Trying to stop a timer which was not started");
-            }
-        }
+        timespec startTime;
+        timespec stopTime;
+        State state{State::notStarted};
     };
 
     using RealTimer = SingleTimer<Type::real>;
