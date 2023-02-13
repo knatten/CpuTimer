@@ -5,6 +5,10 @@
 #include <ctime>
 #include <iostream>
 
+#ifndef KNATTEN_CPUTIMER_YOLO
+#include <stdexcept>
+#endif
+
 namespace knatten::CpuTimer
 {
     enum class Type
@@ -65,17 +69,21 @@ namespace knatten::CpuTimer
         template <typename Duration = std::chrono::nanoseconds>
         Duration elapsed() const
         {
+#ifndef KNATTEN_CPUTIMER_YOLO
             if (state == Detail::State::notStarted)
             {
                 throw std::runtime_error("Trying to get elapsed time of a "
                                          "timer which was not started");
             }
+#endif
             return Detail::timeSince<ClockType, Duration>(startTime);
         }
 
       private:
         timespec startTime;
         Detail::State state{Detail::State::notStarted};
+
+        template <Type T> friend void fakeStartTimeNow(SingleTimer<T> &);
     };
 
     using RealTimer = SingleTimer<Type::real>;
@@ -109,11 +117,13 @@ namespace knatten::CpuTimer
         template <typename Duration = std::chrono::nanoseconds>
         Result<Duration> elapsed() const
         {
+#ifndef KNATTEN_CPUTIMER_YOLO
             if (state == Detail::State::notStarted)
             {
                 throw std::runtime_error("Trying to get elapsed time of a "
                                          "timer which was not started");
             }
+#endif
             return Result<Duration>{
                 Detail::timeSince<Type::real, Duration>(realStartTime),
                 Detail::timeSince<Type::process, Duration>(processStartTime),
@@ -126,7 +136,9 @@ namespace knatten::CpuTimer
         timespec realStartTime;
         timespec processStartTime;
         timespec threadStartTime;
-        Detail::State state;
+        Detail::State state{Detail::State::notStarted};
+
+        friend void fakeStartTimeNow(Timer &);
     };
 
 } // namespace knatten::CpuTimer
