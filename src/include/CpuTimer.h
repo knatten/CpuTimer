@@ -13,14 +13,13 @@ namespace knatten::CpuTimer
         process,
         thread
     };
-    enum class State : uint8_t
-    {
-        notStarted,
-        started,
-        stopped
-    };
     namespace Detail
     {
+        enum class State : uint8_t
+        {
+            notStarted,
+            started
+        };
         template <Type type> struct TypeTrait
         {
         };
@@ -36,65 +35,47 @@ namespace knatten::CpuTimer
         {
             static constexpr auto type = CLOCK_THREAD_CPUTIME_ID;
         };
+
+        template <Type ClockType, typename Duration = std::chrono::nanoseconds>
+        Duration timeSince(const timespec &startTime)
+        {
+            timespec now;
+            clock_gettime(Detail::TypeTrait<ClockType>::type, &now);
+            const auto ns{(now.tv_sec - startTime.tv_sec) * 1000000000 +
+                          (now.tv_nsec - startTime.tv_nsec)};
+            return std::chrono::duration_cast<Duration>(
+                std::chrono::nanoseconds{ns});
+        }
+
     }; // namespace Detail
 
     template <Type ClockType> class SingleTimer
     {
       public:
+        // Start the timer.
+        // Can be called multiple times, which restarts the timer.
         void start()
         {
-            state = State::started;
+            state = Detail::State::started;
             clock_gettime(Detail::TypeTrait<ClockType>::type, &startTime);
         }
 
-        // Throws: std::runtime_error if the clock was not started
-        void stop()
-        {
-            if (state == State::notStarted)
-            {
-                throw std::runtime_error(
-                    "Trying to stop a timer which was not started");
-            }
-            state = State::stopped;
-            clock_gettime(Detail::TypeTrait<ClockType>::type, &stopTime);
-        }
-
         // Get elapsed time.
-        // If the timer was not previously stopped, returns the elapsed "lap"
-        // time until the current time. If the timer was previously stopped,
-        // returns the time elapsed until the time when it was stopped.
-        // Throws: std::runtime_error if the timer was not started
+        // Throws: std::runtime_error if the timer was not started.
         template <typename Duration = std::chrono::nanoseconds>
         Duration elapsed() const
         {
-            if (state == State::notStarted)
+            if (state == Detail::State::notStarted)
             {
-                throw std::runtime_error(
-                    "Trying to get elapsed time of a timer which was not started");
+                throw std::runtime_error("Trying to get elapsed time of a "
+                                         "timer which was not started");
             }
-            const auto until = [this]()
-            {
-                if (state == State::stopped)
-                {
-                    return stopTime;
-                }
-                else
-                {
-                    timespec now;
-                    clock_gettime(Detail::TypeTrait<ClockType>::type, &now);
-                    return now;
-                }
-            }();
-            const auto ns{(until.tv_sec - startTime.tv_sec) * 1000000000 +
-                          (until.tv_nsec - startTime.tv_nsec)};
-            return std::chrono::duration_cast<Duration>(
-                std::chrono::nanoseconds{ns});
+            return Detail::timeSince<ClockType, Duration>(startTime);
         }
 
       private:
         timespec startTime;
-        timespec stopTime;
-        State state{State::notStarted};
+        Detail::State state{Detail::State::notStarted};
     };
 
     using RealTimer = SingleTimer<Type::real>;
@@ -103,6 +84,7 @@ namespace knatten::CpuTimer
 
     class Timer
     {
+      public:
         template <typename Duration> struct Result
         {
             Duration realTime;
@@ -110,33 +92,41 @@ namespace knatten::CpuTimer
             Duration threadTime;
         };
 
-      public:
+        // Start the timer.
+        // Can be called multiple times, which restarts the timer.
         void start()
         {
-            realTimer.start();
-            processTimer.start();
-            threadTimer.start();
+            state = Detail::State::started;
+            clock_gettime(Detail::TypeTrait<Type::real>::type, &realStartTime);
+            clock_gettime(Detail::TypeTrait<Type::process>::type,
+                          &processStartTime);
+            clock_gettime(Detail::TypeTrait<Type::thread>::type,
+                          &threadStartTime);
         }
 
-        void stop()
-        {
-            realTimer.stop();
-            processTimer.stop();
-            threadTimer.stop();
-        }
-
+        // Get elapsed time.
+        // Throws: std::runtime_error if the timer was not started.
         template <typename Duration = std::chrono::nanoseconds>
         Result<Duration> elapsed() const
         {
-            return Result<Duration>{realTimer.template elapsed<Duration>(),
-                                    processTimer.template elapsed<Duration>(),
-                                    threadTimer.template elapsed<Duration>()};
+            if (state == Detail::State::notStarted)
+            {
+                throw std::runtime_error("Trying to get elapsed time of a "
+                                         "timer which was not started");
+            }
+            return Result<Duration>{
+                Detail::timeSince<Type::real, Duration>(realStartTime),
+                Detail::timeSince<Type::process, Duration>(processStartTime),
+                Detail::timeSince<Type::thread, Duration>(threadStartTime)};
         }
 
       private:
-        RealTimer realTimer;
-        ProcessTimer processTimer;
-        ThreadTimer threadTimer;
+        // Do not reuse SingleTimers here, to avoid triplicated if checks
+        // Instead live with some duplication
+        timespec realStartTime;
+        timespec processStartTime;
+        timespec threadStartTime;
+        Detail::State state;
     };
 
 } // namespace knatten::CpuTimer
