@@ -1,7 +1,19 @@
 set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${CMAKE_BINARY_DIR})
 find_package(Catch2 3.3.1 REQUIRED CONFIG)
 
-add_executable(TestCpuTimer test.cpp)
-target_link_libraries(TestCpuTimer CpuTimer Catch2::Catch2WithMain)
-set_target_properties(TestCpuTimer PROPERTIES CXX_STANDARD 17)
-add_test(NAME TestCpuTimer COMMAND TestCpuTimer)
+function(add_cpu_timer_test)
+    cmake_parse_arguments(ARG "" "NAME" "SOURCES" ${ARGN})
+    add_executable(${ARG_NAME} ${ARG_SOURCES})
+    target_link_libraries(${ARG_NAME} CpuTimer Catch2::Catch2WithMain)
+    set_target_properties(${ARG_NAME} PROPERTIES CXX_STANDARD 17)
+    target_include_directories(${ARG_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
+    add_test(NAME ${ARG_NAME} COMMAND ${ARG_NAME})
+endfunction()
+
+add_cpu_timer_test(NAME TestCpuTimer SOURCES test.cpp)
+
+add_cpu_timer_test(NAME TestYolo SOURCES testYolo.cpp)
+target_compile_options(TestYolo PRIVATE -fno-exceptions)
+
+add_cpu_timer_test(NAME TestYoloAbiBreaking SOURCES testYoloAbiBreaking.cpp)
+target_compile_options(TestYoloAbiBreaking PRIVATE -fno-exceptions)

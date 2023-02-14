@@ -31,7 +31,7 @@ TEST_CASE("Single timer")
                  WithinAbs(10, 10));
 }
 
-TEST_CASE("Checking elapsed time without starting throws")
+TEST_CASE("Single timer checking elapsed time without starting throws")
 {
     RealTimer timer;
     REQUIRE_THROWS_WITH(
@@ -61,6 +61,14 @@ TEST_CASE("Full timer")
     REQUIRE_THAT(restartedTime.processTime.count(), WithinAbs(10, 10));
     // Not affected by sleep:
     REQUIRE_THAT(restartedTime.threadTime.count(), WithinAbs(10, 10));
+}
+
+TEST_CASE("Full timer checking elapsed time without starting throws")
+{
+    Timer timer;
+    REQUIRE_THROWS_WITH(
+        timer.elapsed(),
+        Equals("Trying to get elapsed time of a timer which was not started"));
 }
 
 volatile int doNotOptimize;
