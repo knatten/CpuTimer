@@ -14,6 +14,11 @@ using namespace std::chrono_literals;
 static_assert(sizeof(RealTimer) == sizeof(timespec));
 static_assert(sizeof(Timer) == 3 * sizeof(timespec));
 
+static_assert(noexcept(RealTimer{}.start()));
+static_assert(noexcept(RealTimer{}.elapsed()));
+static_assert(noexcept(Timer{}.start()));
+static_assert(noexcept(Timer{}.elapsed()));
+
 TEST_CASE("Smoke test that SingleTimer still works")
 {
     RealTimer realTimer;

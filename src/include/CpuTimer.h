@@ -9,7 +9,10 @@
 #define KNATTEN_CPUTIMER_YOLO
 #endif
 
-#ifndef KNATTEN_CPUTIMER_YOLO
+#ifdef KNATTEN_CPUTIMER_YOLO
+constexpr bool is_noexcept = true;
+#else
+constexpr bool is_noexcept = false;
 #include <stdexcept>
 #endif
 
@@ -77,7 +80,7 @@ namespace knatten::CpuTimer
       public:
         // Start the timer.
         // Can be called multiple times, which restarts the timer.
-        void start()
+        void start() noexcept(is_noexcept)
         {
 #ifndef KNATTEN_CPUTIMER_YOLO_ABI_BREAKING
             state = Detail::State::started;
@@ -88,7 +91,7 @@ namespace knatten::CpuTimer
         // Get elapsed time.
         // Throws: std::runtime_error if the timer was not started.
         template <typename Duration = std::chrono::nanoseconds>
-        Duration elapsed() const
+        Duration elapsed() const noexcept(is_noexcept)
         {
 #ifndef KNATTEN_CPUTIMER_YOLO
             if (state == Detail::State::notStarted)
@@ -125,7 +128,7 @@ namespace knatten::CpuTimer
 
         // Start the timer.
         // Can be called multiple times, which restarts the timer.
-        void start()
+        void start() noexcept(is_noexcept)
         {
 #ifndef KNATTEN_CPUTIMER_YOLO_ABI_BREAKING
             state = Detail::State::started;
@@ -138,7 +141,7 @@ namespace knatten::CpuTimer
         // Get elapsed time.
         // Throws: std::runtime_error if the timer was not started.
         template <typename Duration = std::chrono::nanoseconds>
-        Result<Duration> elapsed() const
+        Result<Duration> elapsed() const noexcept(is_noexcept)
         {
 #ifndef KNATTEN_CPUTIMER_YOLO
             if (state == Detail::State::notStarted)

@@ -12,6 +12,11 @@ using namespace knatten::CpuTimer;
 using Catch::Matchers::WithinAbs;
 using namespace std::chrono_literals;
 
+static_assert(noexcept(RealTimer{}.start()));
+static_assert(noexcept(RealTimer{}.elapsed()));
+static_assert(noexcept(Timer{}.start()));
+static_assert(noexcept(Timer{}.elapsed()));
+
 TEST_CASE("Checking elapsed time of non-started SingleTimer does not throw")
 {
     RealTimer realTimer;
