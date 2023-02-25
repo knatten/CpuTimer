@@ -12,3 +12,4 @@ add_library(CpuTimer INTERFACE)
 target_include_directories(CpuTimer INTERFACE include)
 
 add_subdirectory(test)
+add_subdirectory(benchmarking)
