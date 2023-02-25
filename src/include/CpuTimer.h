@@ -5,13 +5,7 @@
 #include <ctime>
 #include <iostream>
 
-#ifdef KNATTEN_CPUTIMER_YOLO_ABI_BREAKING
-#define KNATTEN_CPUTIMER_YOLO
-#endif
-
-#ifndef KNATTEN_CPUTIMER_YOLO
 #include <stdexcept>
-#endif
 
 namespace knatten
 {
@@ -67,9 +61,7 @@ namespace knatten
             // Can be called multiple times, which restarts the timer.
             void start()
             {
-#ifndef KNATTEN_CPUTIMER_YOLO_ABI_BREAKING
                 state = Detail::State::started;
-#endif
                 clock_gettime(Detail::TypeTrait<ClockType>::type, &startTime);
             }
 
@@ -78,21 +70,17 @@ namespace knatten
             template <typename Duration = std::chrono::nanoseconds>
             Duration elapsed() const
             {
-#ifndef KNATTEN_CPUTIMER_YOLO
                 if (state == Detail::State::notStarted)
                 {
                     throw std::runtime_error("Trying to get elapsed time of a "
                                              "timer which was not started");
                 }
-#endif
                 return Detail::timeSince<ClockType, Duration>(startTime);
             }
 
           private:
             timespec startTime;
-#ifndef KNATTEN_CPUTIMER_YOLO_ABI_BREAKING
             Detail::State state{Detail::State::notStarted};
-#endif
 
             template <Type T> friend void fakeStartTimeNow(SingleTimer<T> &);
         };
@@ -115,9 +103,7 @@ namespace knatten
             // Can be called multiple times, which restarts the timer.
             void start()
             {
-#ifndef KNATTEN_CPUTIMER_YOLO_ABI_BREAKING
                 state = Detail::State::started;
-#endif
                 clock_gettime(Detail::TypeTrait<Type::real>::type,
                               &realStartTime);
                 clock_gettime(Detail::TypeTrait<Type::process>::type,
@@ -131,13 +117,11 @@ namespace knatten
             template <typename Duration = std::chrono::nanoseconds>
             Result<Duration> elapsed() const
             {
-#ifndef KNATTEN_CPUTIMER_YOLO
                 if (state == Detail::State::notStarted)
                 {
                     throw std::runtime_error("Trying to get elapsed time of a "
                                              "timer which was not started");
                 }
-#endif
                 return Result<Duration>{
                     Detail::timeSince<Type::real, Duration>(realStartTime),
                     Detail::timeSince<Type::process, Duration>(
@@ -151,9 +135,7 @@ namespace knatten
             timespec realStartTime;
             timespec processStartTime;
             timespec threadStartTime;
-#ifndef KNATTEN_CPUTIMER_YOLO_ABI_BREAKING
             Detail::State state{Detail::State::notStarted};
-#endif
 
             friend void fakeStartTimeNow(Timer &);
         };
