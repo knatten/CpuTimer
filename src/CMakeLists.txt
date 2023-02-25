@@ -3,8 +3,17 @@ project(CpuTimer)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror")
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fsanitize=undefined")
 set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${CMAKE_BINARY_DIR})
+
+# Memory sanitizer requires rebuilding the entire world, don't bother for now
+set(VALID_SANITIZERS address thread undefined)
+if(SANITIZER)
+    if("${SANITIZER}" IN_LIST VALID_SANITIZERS)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=${SANITIZER}")
+    else()
+        message(FATAL_ERROR "Unknown SANITIZER option '${SANITIZER}', valid options are ${VALID_SANITIZERS}")
+    endif()
+endif()
 
 enable_testing()
 

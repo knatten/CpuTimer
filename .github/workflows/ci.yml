@@ -7,6 +7,16 @@ jobs:
       - uses: actions/checkout@v3
       - run: ./ci/setup/setup.sh
       - run: ./ci/format.sh --check
+  sanitizers:
+    strategy:
+      fail-fast: false
+      matrix:
+        sanitizer: [address, thread, undefined]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - run: ./ci/setup/setup.sh
+      - run: ./ci/sanitizer.sh ${{matrix.sanitizer}}
   test:
     strategy:
       fail-fast: false
@@ -24,12 +34,16 @@ jobs:
     needs:
       - test
       - formatting
+      - sanitizers
     steps:
       - run: |
           if [[ "${{ needs.test.result }}" != "success" ]]; then
             exit 1
           fi
           if [[ "${{ needs.formatting.result }}" != "success" ]]; then
+            exit 1
+          fi
+          if [[ "${{ needs.sanitizers.result }}" != "success" ]]; then
             exit 1
           fi
           exit 0

@@ -13,7 +13,11 @@ using Catch::Matchers::Equals;
 using namespace knatten::CpuTimer;
 using namespace std::chrono_literals;
 
+#ifdef TIMER_TOLERANCE
+constexpr int tolerance = TIMER_TOLERANCE;
+#else
 constexpr int tolerance = 10;
+#endif
 
 // Only tests the interface of SingleTimer
 // The particularities of real/process/thread are tested in the Timer tests
