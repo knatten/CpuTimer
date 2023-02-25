@@ -1,6 +1,12 @@
 name: CI
 on: [push]
 jobs:
+  formatting:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - run: ./ci/setup/setup.sh
+      - run: ./ci/format.sh --check
   test:
     strategy:
       fail-fast: false
@@ -17,11 +23,13 @@ jobs:
     runs-on: ubuntu-22.04
     needs:
       - test
+      - formatting
     steps:
       - run: |
-          result="${{ needs.test.result }}"
-          if [[ $result == "success" ]]; then
-            exit 0
-          else
+          if [[ "${{ needs.test.result }}" != "success" ]]; then
             exit 1
           fi
+          if [[ "${{ needs.formatting.result }}" != "success" ]]; then
+            exit 1
+          fi
+          exit 0
