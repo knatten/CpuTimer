@@ -2,6 +2,9 @@
 
 C++11 header only timer library (`clock_gettime` wrapper)
 
+![CI](https://github.com/knatten/CpuTimer/actions/workflows/ci.yml/badge.svg)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](code_of_conduct.md)
+
 Allows you to measure
 - Real time spent
 - CPU time spent
