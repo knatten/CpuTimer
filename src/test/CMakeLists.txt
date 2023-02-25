@@ -1,4 +1,3 @@
-set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${CMAKE_BINARY_DIR})
 find_package(Catch2 3.3.1 REQUIRED CONFIG)
 
 function(add_cpu_timer_test)
@@ -11,9 +10,3 @@ function(add_cpu_timer_test)
 endfunction()
 
 add_cpu_timer_test(NAME TestCpuTimer SOURCES test.cpp)
-
-add_cpu_timer_test(NAME TestYolo SOURCES testYolo.cpp)
-target_compile_options(TestYolo PRIVATE -fno-exceptions)
-
-add_cpu_timer_test(NAME TestYoloAbiBreaking SOURCES testYoloAbiBreaking.cpp)
-target_compile_options(TestYoloAbiBreaking PRIVATE -fno-exceptions)

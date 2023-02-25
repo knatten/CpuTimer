@@ -5,152 +5,140 @@
 #include <ctime>
 #include <iostream>
 
-#ifdef KNATTEN_CPUTIMER_YOLO_ABI_BREAKING
-#define KNATTEN_CPUTIMER_YOLO
-#endif
-
-#ifndef KNATTEN_CPUTIMER_YOLO
 #include <stdexcept>
-#endif
 
-namespace knatten::CpuTimer
+namespace knatten
 {
-    enum class Type
+    namespace CpuTimer
     {
-        real,
-        process,
-        thread
-    };
-    namespace Detail
-    {
-        enum class State : uint8_t
+        enum class Type
         {
-            notStarted,
-            started
+            real,
+            process,
+            thread
         };
-        template <Type type> struct TypeTrait
+        namespace Detail
         {
-        };
-        template <> struct TypeTrait<Type::real>
-        {
-            static constexpr auto type = CLOCK_REALTIME;
-        };
-        template <> struct TypeTrait<Type::process>
-        {
-            static constexpr auto type = CLOCK_PROCESS_CPUTIME_ID;
-        };
-        template <> struct TypeTrait<Type::thread>
-        {
-            static constexpr auto type = CLOCK_THREAD_CPUTIME_ID;
-        };
-
-        template <Type ClockType, typename Duration = std::chrono::nanoseconds>
-        Duration timeSince(const timespec &startTime)
-        {
-            timespec now;
-            clock_gettime(Detail::TypeTrait<ClockType>::type, &now);
-            const auto ns{(now.tv_sec - startTime.tv_sec) * 1000000000 +
-                          (now.tv_nsec - startTime.tv_nsec)};
-            return std::chrono::duration_cast<Duration>(
-                std::chrono::nanoseconds{ns});
-        }
-
-    }; // namespace Detail
-
-    template <Type ClockType> class SingleTimer
-    {
-      public:
-        // Start the timer.
-        // Can be called multiple times, which restarts the timer.
-        void start()
-        {
-#ifndef KNATTEN_CPUTIMER_YOLO_ABI_BREAKING
-            state = Detail::State::started;
-#endif
-            clock_gettime(Detail::TypeTrait<ClockType>::type, &startTime);
-        }
-
-        // Get elapsed time.
-        // Throws: std::runtime_error if the timer was not started.
-        template <typename Duration = std::chrono::nanoseconds>
-        Duration elapsed() const
-        {
-#ifndef KNATTEN_CPUTIMER_YOLO
-            if (state == Detail::State::notStarted)
+            enum class State : uint8_t
             {
-                throw std::runtime_error("Trying to get elapsed time of a "
-                                         "timer which was not started");
+                notStarted,
+                started
+            };
+            template <Type type> struct TypeTrait
+            {
+            };
+            template <> struct TypeTrait<Type::real>
+            {
+                static constexpr auto type = CLOCK_REALTIME;
+            };
+            template <> struct TypeTrait<Type::process>
+            {
+                static constexpr auto type = CLOCK_PROCESS_CPUTIME_ID;
+            };
+            template <> struct TypeTrait<Type::thread>
+            {
+                static constexpr auto type = CLOCK_THREAD_CPUTIME_ID;
+            };
+
+            template <Type ClockType,
+                      typename Duration = std::chrono::nanoseconds>
+            Duration timeSince(const timespec &startTime)
+            {
+                timespec now;
+                clock_gettime(Detail::TypeTrait<ClockType>::type, &now);
+                const auto ns{(now.tv_sec - startTime.tv_sec) * 1000000000 +
+                              (now.tv_nsec - startTime.tv_nsec)};
+                return std::chrono::duration_cast<Duration>(
+                    std::chrono::nanoseconds{ns});
             }
-#endif
-            return Detail::timeSince<ClockType, Duration>(startTime);
-        }
 
-      private:
-        timespec startTime;
-#ifndef KNATTEN_CPUTIMER_YOLO_ABI_BREAKING
-        Detail::State state{Detail::State::notStarted};
-#endif
+        }; // namespace Detail
 
-        template <Type T> friend void fakeStartTimeNow(SingleTimer<T> &);
-    };
-
-    using RealTimer = SingleTimer<Type::real>;
-    using ProcessTimer = SingleTimer<Type::process>;
-    using ThreadTimer = SingleTimer<Type::thread>;
-
-    class Timer
-    {
-      public:
-        template <typename Duration> struct Result
+        template <Type ClockType> class SingleTimer
         {
-            Duration realTime;
-            Duration processTime;
-            Duration threadTime;
+          public:
+            // Start the timer.
+            // Can be called multiple times, which restarts the timer.
+            void start()
+            {
+                state = Detail::State::started;
+                clock_gettime(Detail::TypeTrait<ClockType>::type, &startTime);
+            }
+
+            // Get elapsed time.
+            // Throws: std::runtime_error if the timer was not started.
+            template <typename Duration = std::chrono::nanoseconds>
+            Duration elapsed() const
+            {
+                if (state == Detail::State::notStarted)
+                {
+                    throw std::runtime_error("Trying to get elapsed time of a "
+                                             "timer which was not started");
+                }
+                return Detail::timeSince<ClockType, Duration>(startTime);
+            }
+
+          private:
+            timespec startTime;
+            Detail::State state{Detail::State::notStarted};
+
+            template <Type T> friend void fakeStartTimeNow(SingleTimer<T> &);
         };
 
-        // Start the timer.
-        // Can be called multiple times, which restarts the timer.
-        void start()
-        {
-#ifndef KNATTEN_CPUTIMER_YOLO_ABI_BREAKING
-            state = Detail::State::started;
-#endif
-            clock_gettime(Detail::TypeTrait<Type::real>::type, &realStartTime);
-            clock_gettime(Detail::TypeTrait<Type::process>::type,
-                          &processStartTime);
-            clock_gettime(Detail::TypeTrait<Type::thread>::type,
-                          &threadStartTime);
-        }
+        using RealTimer = SingleTimer<Type::real>;
+        using ProcessTimer = SingleTimer<Type::process>;
+        using ThreadTimer = SingleTimer<Type::thread>;
 
-        // Get elapsed time.
-        // Throws: std::runtime_error if the timer was not started.
-        template <typename Duration = std::chrono::nanoseconds>
-        Result<Duration> elapsed() const
+        class Timer
         {
-#ifndef KNATTEN_CPUTIMER_YOLO
-            if (state == Detail::State::notStarted)
+          public:
+            template <typename Duration> struct Result
             {
-                throw std::runtime_error("Trying to get elapsed time of a "
-                                         "timer which was not started");
+                Duration realTime;
+                Duration processTime;
+                Duration threadTime;
+            };
+
+            // Start the timer.
+            // Can be called multiple times, which restarts the timer.
+            void start()
+            {
+                state = Detail::State::started;
+                clock_gettime(Detail::TypeTrait<Type::real>::type,
+                              &realStartTime);
+                clock_gettime(Detail::TypeTrait<Type::process>::type,
+                              &processStartTime);
+                clock_gettime(Detail::TypeTrait<Type::thread>::type,
+                              &threadStartTime);
             }
-#endif
-            return Result<Duration>{
-                Detail::timeSince<Type::real, Duration>(realStartTime),
-                Detail::timeSince<Type::process, Duration>(processStartTime),
-                Detail::timeSince<Type::thread, Duration>(threadStartTime)};
-        }
 
-      private:
-        // Do not reuse SingleTimers here, to avoid triplicated if checks
-        // Instead live with some duplication
-        timespec realStartTime;
-        timespec processStartTime;
-        timespec threadStartTime;
-#ifndef KNATTEN_CPUTIMER_YOLO_ABI_BREAKING
-        Detail::State state{Detail::State::notStarted};
-#endif
+            // Get elapsed time.
+            // Throws: std::runtime_error if the timer was not started.
+            template <typename Duration = std::chrono::nanoseconds>
+            Result<Duration> elapsed() const
+            {
+                if (state == Detail::State::notStarted)
+                {
+                    throw std::runtime_error("Trying to get elapsed time of a "
+                                             "timer which was not started");
+                }
+                return Result<Duration>{
+                    Detail::timeSince<Type::real, Duration>(realStartTime),
+                    Detail::timeSince<Type::process, Duration>(
+                        processStartTime),
+                    Detail::timeSince<Type::thread, Duration>(threadStartTime)};
+            }
 
-        friend void fakeStartTimeNow(Timer &);
-    };
+          private:
+            // Do not reuse SingleTimers here, to avoid triplicated if checks
+            // Instead live with some duplication
+            timespec realStartTime;
+            timespec processStartTime;
+            timespec threadStartTime;
+            Detail::State state{Detail::State::notStarted};
 
-} // namespace knatten::CpuTimer
+            friend void fakeStartTimeNow(Timer &);
+        };
+
+    } // namespace CpuTimer
+} // namespace knatten
