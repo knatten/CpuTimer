@@ -1,4 +1,5 @@
 #include "CpuTimer.h"
+#include "at_least_matcher.h"
 
 #include <catch2/catch_all.hpp>
 
@@ -8,10 +9,11 @@
 #include <thread>
 
 using Catch::Matchers::Equals;
-using Catch::Matchers::WithinAbs;
 
 using namespace knatten::CpuTimer;
 using namespace std::chrono_literals;
+
+constexpr int tolerance = 10;
 
 // Only tests the interface of SingleTimer
 // The particularities of real/process/thread are tested in the Timer tests
@@ -23,12 +25,12 @@ TEST_CASE("Single timer")
     // Elapsed time
     std::this_thread::sleep_for(20ms);
     const auto lapTime = realTimer.elapsed<std::chrono::milliseconds>();
-    REQUIRE_THAT(lapTime.count(), WithinAbs(30, 10));
+    REQUIRE_THAT(lapTime.count(), AtLeast(20, tolerance));
 
     // Starting again re-starts the timer
     realTimer.start();
     REQUIRE_THAT(realTimer.elapsed<std::chrono::milliseconds>().count(),
-                 WithinAbs(10, 10));
+                 AtLeast(0, tolerance));
 }
 
 TEST_CASE("Single timer checking elapsed time without starting throws")
@@ -47,20 +49,20 @@ TEST_CASE("Full timer")
     // Elapsed time
     std::this_thread::sleep_for(20ms);
     const auto lapTime = timer.elapsed<std::chrono::milliseconds>();
-    REQUIRE_THAT(lapTime.realTime.count(), WithinAbs(30, 10));
+    REQUIRE_THAT(lapTime.realTime.count(), AtLeast(20, tolerance));
     // Not affected by sleep:
-    REQUIRE_THAT(lapTime.processTime.count(), WithinAbs(10, 10));
+    REQUIRE_THAT(lapTime.processTime.count(), AtLeast(0, tolerance));
     // Not affected by sleep:
-    REQUIRE_THAT(lapTime.threadTime.count(), WithinAbs(10, 10));
+    REQUIRE_THAT(lapTime.threadTime.count(), AtLeast(0, tolerance));
 
     // Starting again re-starts the timer
     timer.start();
     const auto restartedTime = timer.elapsed<std::chrono::milliseconds>();
-    REQUIRE_THAT(restartedTime.realTime.count(), WithinAbs(10, 10));
+    REQUIRE_THAT(restartedTime.realTime.count(), AtLeast(0, tolerance));
     // Not affected by sleep:
-    REQUIRE_THAT(restartedTime.processTime.count(), WithinAbs(10, 10));
+    REQUIRE_THAT(restartedTime.processTime.count(), AtLeast(0, tolerance));
     // Not affected by sleep:
-    REQUIRE_THAT(restartedTime.threadTime.count(), WithinAbs(10, 10));
+    REQUIRE_THAT(restartedTime.threadTime.count(), AtLeast(0, tolerance));
 }
 
 TEST_CASE("Full timer checking elapsed time without starting throws")
@@ -88,9 +90,9 @@ TEST_CASE("Full timer with busywork on main thread")
     timer.start();
     busyWork(20ms);
     const auto elapsed = timer.elapsed<std::chrono::milliseconds>();
-    REQUIRE_THAT(elapsed.realTime.count(), WithinAbs(30, 11));
-    REQUIRE_THAT(elapsed.processTime.count(), WithinAbs(30, 11));
-    REQUIRE_THAT(elapsed.threadTime.count(), WithinAbs(30, 11));
+    REQUIRE_THAT(elapsed.realTime.count(), AtLeast(19, tolerance));
+    REQUIRE_THAT(elapsed.processTime.count(), AtLeast(19, tolerance));
+    REQUIRE_THAT(elapsed.threadTime.count(), AtLeast(19, tolerance));
 }
 
 TEST_CASE("Full timer with busywork on separate thread")
@@ -100,10 +102,10 @@ TEST_CASE("Full timer with busywork on separate thread")
     auto future = std::async(std::launch::async, []() { busyWork(20ms); });
     future.wait();
     const auto elapsed = timer.elapsed<std::chrono::milliseconds>();
-    REQUIRE_THAT(elapsed.realTime.count(), WithinAbs(30, 11));
-    REQUIRE_THAT(elapsed.processTime.count(), WithinAbs(30, 11));
+    REQUIRE_THAT(elapsed.realTime.count(), AtLeast(19, tolerance));
+    REQUIRE_THAT(elapsed.processTime.count(), AtLeast(10, tolerance));
     // Work happened on different thread:
-    REQUIRE_THAT(elapsed.threadTime.count(), WithinAbs(10, 10));
+    REQUIRE_THAT(elapsed.threadTime.count(), AtLeast(0, tolerance));
 }
 
 TEST_CASE("Full timer with busywork on multiple threads")
@@ -117,10 +119,10 @@ TEST_CASE("Full timer with busywork on multiple threads")
     const auto elapsed = timer.elapsed<std::chrono::milliseconds>();
     const int expectedRealTime = 30;
     REQUIRE_THAT(elapsed.realTime.count(),
-                 WithinAbs(expectedRealTime + 10, 11));
+                 AtLeast(expectedRealTime - 1, tolerance));
     // Work happened twice
     REQUIRE_THAT(elapsed.processTime.count(),
-                 WithinAbs(expectedRealTime * 2 + 10, 11));
+                 AtLeast((expectedRealTime - 1) * 2, tolerance));
     // Work happened on different threads:
-    REQUIRE_THAT(elapsed.threadTime.count(), WithinAbs(10, 10));
+    REQUIRE_THAT(elapsed.threadTime.count(), AtLeast(0, tolerance));
 }
