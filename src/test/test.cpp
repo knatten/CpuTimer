@@ -1,10 +1,10 @@
 #include "CpuTimer.h"
+#include "DoNotOptimize.h"
 #include "at_least_matcher.h"
 
 #include <catch2/catch_all.hpp>
 
 #include <chrono>
-#include <cmath>
 #include <future>
 #include <thread>
 
@@ -73,14 +73,14 @@ TEST_CASE("Full timer checking elapsed time without starting throws")
         Equals("Trying to get elapsed time of a timer which was not started"));
 }
 
-volatile int doNotOptimize;
-
 void busyWork(std::chrono::nanoseconds duration)
 {
-    const auto now = std::chrono::high_resolution_clock::now();
-    while (std::chrono::high_resolution_clock::now() < now + duration)
+    const auto start = std::chrono::high_resolution_clock::now();
+    for (auto now = std::chrono::high_resolution_clock::now();
+         now < start + duration;
+         now = std::chrono::high_resolution_clock::now())
     {
-        doNotOptimize = sin(doNotOptimize);
+        DoNotOptimize(now);
     }
 }
 
