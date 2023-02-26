@@ -1,10 +1,10 @@
 #include "CpuTimer.h"
+#include "DoNotOptimize.h"
 #include "at_least_matcher.h"
 
 #include <catch2/catch_all.hpp>
 
 #include <chrono>
-#include <cmath>
 #include <future>
 #include <thread>
 
@@ -13,7 +13,11 @@ using Catch::Matchers::Equals;
 using namespace knatten::CpuTimer;
 using namespace std::chrono_literals;
 
+#ifdef TIMER_TOLERANCE
+constexpr int tolerance = TIMER_TOLERANCE;
+#else
 constexpr int tolerance = 10;
+#endif
 
 // Only tests the interface of SingleTimer
 // The particularities of real/process/thread are tested in the Timer tests
@@ -73,14 +77,14 @@ TEST_CASE("Full timer checking elapsed time without starting throws")
         Equals("Trying to get elapsed time of a timer which was not started"));
 }
 
-volatile int doNotOptimize;
-
 void busyWork(std::chrono::nanoseconds duration)
 {
-    const auto now = std::chrono::high_resolution_clock::now();
-    while (std::chrono::high_resolution_clock::now() < now + duration)
+    const auto start = std::chrono::high_resolution_clock::now();
+    for (auto now = std::chrono::high_resolution_clock::now();
+         now < start + duration;
+         now = std::chrono::high_resolution_clock::now())
     {
-        doNotOptimize = sin(doNotOptimize);
+        DoNotOptimize(now);
     }
 }
 
@@ -103,7 +107,7 @@ TEST_CASE("Full timer with busywork on separate thread")
     future.wait();
     const auto elapsed = timer.elapsed<std::chrono::milliseconds>();
     REQUIRE_THAT(elapsed.realTime.count(), AtLeast(19, tolerance));
-    REQUIRE_THAT(elapsed.processTime.count(), AtLeast(10, tolerance));
+    REQUIRE_THAT(elapsed.processTime.count(), AtLeast(19, tolerance));
     // Work happened on different thread:
     REQUIRE_THAT(elapsed.threadTime.count(), AtLeast(0, tolerance));
 }
