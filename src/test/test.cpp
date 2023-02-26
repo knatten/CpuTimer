@@ -107,7 +107,7 @@ TEST_CASE("Full timer with busywork on separate thread")
     future.wait();
     const auto elapsed = timer.elapsed<std::chrono::milliseconds>();
     REQUIRE_THAT(elapsed.realTime.count(), AtLeast(19, tolerance));
-    REQUIRE_THAT(elapsed.processTime.count(), AtLeast(10, tolerance));
+    REQUIRE_THAT(elapsed.processTime.count(), AtLeast(19, tolerance));
     // Work happened on different thread:
     REQUIRE_THAT(elapsed.threadTime.count(), AtLeast(0, tolerance));
 }
