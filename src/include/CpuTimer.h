@@ -40,10 +40,10 @@ namespace knatten
                 static constexpr auto type = CLOCK_THREAD_CPUTIME_ID;
             };
 
-            template <Type ClockType> void checked_clock_gettime(timespec &tp)
+            template <Type ClockType> void checked_clock_gettime(timespec &time)
             {
                 const auto result =
-                    clock_gettime(Detail::TypeTrait<ClockType>::type, &tp);
+                    clock_gettime(Detail::TypeTrait<ClockType>::type, &time);
                 if (result == -1)
                 {
                     throw std::runtime_error("Failed to get time");
@@ -54,16 +54,19 @@ namespace knatten
                       typename Duration = std::chrono::nanoseconds>
             Duration timeSince(const timespec &startTime)
             {
+                // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
                 timespec now;
                 checked_clock_gettime<ClockType>(now);
-                const auto ns{(now.tv_sec - startTime.tv_sec) * 1000000000 +
-                              (now.tv_nsec - startTime.tv_nsec)};
+                const auto nanoseconds{(now.tv_sec - startTime.tv_sec) *
+                                           1000000000 +
+                                       (now.tv_nsec - startTime.tv_nsec)};
                 return std::chrono::duration_cast<Duration>(
-                    std::chrono::nanoseconds{ns});
+                    std::chrono::nanoseconds{nanoseconds});
             }
 
         }; // namespace Detail
 
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
         template <Type ClockType> class SingleTimer
         {
           public:
@@ -99,6 +102,7 @@ namespace knatten
         using ProcessTimer = SingleTimer<Type::process>;
         using ThreadTimer = SingleTimer<Type::thread>;
 
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
         class Timer
         {
           public:
