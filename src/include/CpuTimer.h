@@ -40,12 +40,22 @@ namespace knatten
                 static constexpr auto type = CLOCK_THREAD_CPUTIME_ID;
             };
 
+            template <Type ClockType> void checked_clock_gettime(timespec &tp)
+            {
+                const auto result =
+                    clock_gettime(Detail::TypeTrait<ClockType>::type, &tp);
+                if (result == -1)
+                {
+                    throw std::runtime_error("Failed to get time");
+                }
+            }
+
             template <Type ClockType,
                       typename Duration = std::chrono::nanoseconds>
             Duration timeSince(const timespec &startTime)
             {
                 timespec now;
-                clock_gettime(Detail::TypeTrait<ClockType>::type, &now);
+                checked_clock_gettime<ClockType>(now);
                 const auto ns{(now.tv_sec - startTime.tv_sec) * 1000000000 +
                               (now.tv_nsec - startTime.tv_nsec)};
                 return std::chrono::duration_cast<Duration>(
@@ -62,7 +72,7 @@ namespace knatten
             void start()
             {
                 state = Detail::State::started;
-                clock_gettime(Detail::TypeTrait<ClockType>::type, &startTime);
+                Detail::checked_clock_gettime<ClockType>(startTime);
             }
 
             // Get elapsed time.
@@ -104,12 +114,9 @@ namespace knatten
             void start()
             {
                 state = Detail::State::started;
-                clock_gettime(Detail::TypeTrait<Type::real>::type,
-                              &realStartTime);
-                clock_gettime(Detail::TypeTrait<Type::process>::type,
-                              &processStartTime);
-                clock_gettime(Detail::TypeTrait<Type::thread>::type,
-                              &threadStartTime);
+                Detail::checked_clock_gettime<Type::real>(realStartTime);
+                Detail::checked_clock_gettime<Type::process>(processStartTime);
+                Detail::checked_clock_gettime<Type::thread>(threadStartTime);
             }
 
             // Get elapsed time.
