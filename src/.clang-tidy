@@ -1,0 +1,22 @@
+Checks: >
+  *,
+  -abseil-*,
+  -altera-*,
+  -bugprone-easily-swappable-parameters,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -fuchsia-default-arguments-calls,
+  -fuchsia-trailing-return,
+  -google-build-using-namespace,
+  -llvm-header-guard,
+  -llvmlibc-*,
+  -modernize-concat-nested-namespaces,
+  -modernize-use-nodiscard,
+  -modernize-use-trailing-return-type,
+  -readability-magic-numbers,
+
+WarningsAsErrors: '*'
+HeaderFilterRegex: '.*'
+
+CheckOptions:
+  - key:             readability-identifier-length.IgnoredVariableNames
+    value:           _

@@ -15,6 +15,11 @@ if(SANITIZER)
     endif()
 endif()
 
+option(CLANG_TIDY "Enable clang-tidy" OFF)
+if(CLANG_TIDY)
+    set(CMAKE_CXX_CLANG_TIDY "clang-tidy")
+endif()
+
 enable_testing()
 
 add_library(CpuTimer INTERFACE)

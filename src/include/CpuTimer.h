@@ -40,20 +40,33 @@ namespace knatten
                 static constexpr auto type = CLOCK_THREAD_CPUTIME_ID;
             };
 
+            template <Type ClockType> void checked_clock_gettime(timespec &time)
+            {
+                const auto result =
+                    clock_gettime(Detail::TypeTrait<ClockType>::type, &time);
+                if (result == -1)
+                {
+                    throw std::runtime_error("Failed to get time");
+                }
+            }
+
             template <Type ClockType,
                       typename Duration = std::chrono::nanoseconds>
             Duration timeSince(const timespec &startTime)
             {
+                // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
                 timespec now;
-                clock_gettime(Detail::TypeTrait<ClockType>::type, &now);
-                const auto ns{(now.tv_sec - startTime.tv_sec) * 1000000000 +
-                              (now.tv_nsec - startTime.tv_nsec)};
+                checked_clock_gettime<ClockType>(now);
+                const auto nanoseconds{(now.tv_sec - startTime.tv_sec) *
+                                           1000000000 +
+                                       (now.tv_nsec - startTime.tv_nsec)};
                 return std::chrono::duration_cast<Duration>(
-                    std::chrono::nanoseconds{ns});
+                    std::chrono::nanoseconds{nanoseconds});
             }
 
         }; // namespace Detail
 
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
         template <Type ClockType> class SingleTimer
         {
           public:
@@ -62,7 +75,7 @@ namespace knatten
             void start()
             {
                 state = Detail::State::started;
-                clock_gettime(Detail::TypeTrait<ClockType>::type, &startTime);
+                Detail::checked_clock_gettime<ClockType>(startTime);
             }
 
             // Get elapsed time.
@@ -89,6 +102,7 @@ namespace knatten
         using ProcessTimer = SingleTimer<Type::process>;
         using ThreadTimer = SingleTimer<Type::thread>;
 
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
         class Timer
         {
           public:
@@ -104,12 +118,9 @@ namespace knatten
             void start()
             {
                 state = Detail::State::started;
-                clock_gettime(Detail::TypeTrait<Type::real>::type,
-                              &realStartTime);
-                clock_gettime(Detail::TypeTrait<Type::process>::type,
-                              &processStartTime);
-                clock_gettime(Detail::TypeTrait<Type::thread>::type,
-                              &threadStartTime);
+                Detail::checked_clock_gettime<Type::real>(realStartTime);
+                Detail::checked_clock_gettime<Type::process>(processStartTime);
+                Detail::checked_clock_gettime<Type::thread>(threadStartTime);
             }
 
             // Get elapsed time.

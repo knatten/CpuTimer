@@ -4,6 +4,15 @@
 
 namespace
 {
+    void BM_CreateStart(benchmark::State &state)
+    {
+        for (auto _ : state)
+        {
+            knatten::CpuTimer::RealTimer timer;
+            timer.start();
+        }
+    }
+
     void BM_RepeatedSingleTimerElapsedCalls(benchmark::State &state)
     {
         knatten::CpuTimer::RealTimer timer;
@@ -25,6 +34,7 @@ namespace
     }
 } // namespace
 
+BENCHMARK(BM_CreateStart);
 BENCHMARK(BM_RepeatedSingleTimerElapsedCalls);
 BENCHMARK(BM_RepeatedSingleTimerCreationAndElapsedCalls);
 

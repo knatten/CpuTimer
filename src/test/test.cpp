@@ -39,7 +39,7 @@ TEST_CASE("Single timer")
 
 TEST_CASE("Single timer checking elapsed time without starting throws")
 {
-    RealTimer timer;
+    RealTimer timer; // NOLINT(misc-const-correctness)
     REQUIRE_THROWS_WITH(
         timer.elapsed(),
         Equals("Trying to get elapsed time of a timer which was not started"));
@@ -71,7 +71,7 @@ TEST_CASE("Full timer")
 
 TEST_CASE("Full timer checking elapsed time without starting throws")
 {
-    Timer timer;
+    Timer timer; // NOLINT(misc-const-correctness)
     REQUIRE_THROWS_WITH(
         timer.elapsed(),
         Equals("Trying to get elapsed time of a timer which was not started"));
