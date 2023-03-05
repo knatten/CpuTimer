@@ -71,9 +71,14 @@ You can also measure all three types at once with the `Timer` class:
 
 See also [the example](src/examples/main.cpp)
 
-## Usage
+## Installing
 
-Just copy [src/include/CpuTimer.h](src/include/CpuTimer.h) into your project. See the examples above for usage.
+This is a header only library, you can just copy [src/include/CpuTimer.h](src/include/CpuTimer.h) into your project.
+
+If you prefer Conan, you can clone the repository and do `conan create src`. You can then use the `cputimer` Conan
+package in your project, and e.g. do `find_package(cputimer 1.0.0)`
+/ `target_link_libraries(YourTarget cputimer::cputimer)`
+in CMake.
 
 ## Building the full project with tests
 
