@@ -69,6 +69,8 @@ You can also measure all three types at once with the `Timer` class:
               << " milliseconds of thread CPU time\n";
 ```
 
+See also [the example](src/examples/main.cpp)
+
 ## Usage
 
 Just copy [src/include/CpuTimer.h](src/include/CpuTimer.h) into your project. See the examples above for usage.
