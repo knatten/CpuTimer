@@ -21,3 +21,4 @@ cmake -S $SRC_DIR -GNinja -B $BUILD_DIR -DCMAKE_BUILD_TYPE=$CONFIG || exit $?
 cmake --build $BUILD_DIR || exit $?
 
 ctest --output-on-failure || exit $?
+$BUILD_DIR/examples/main || exit $?

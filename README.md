@@ -69,14 +69,16 @@ You can also measure all three types at once with the `Timer` class:
               << " milliseconds of thread CPU time\n";
 ```
 
+See also [the example](src/examples/main.cpp)
+
 ## Usage
 
 Just copy [src/include/CpuTimer.h](src/include/CpuTimer.h) into your project. See the examples above for usage.
 
 ## Building the full project with tests
 
-This is using Conan, if you don't like Conan just have a look at [src/conanfile.txt](src/conanfile.txt) and install
-those dependencies manually.
+This is using Conan, if you don't like Conan just have a look at [src/conanfile.py](src/conanfile.py) and install
+the dependencies listed in the `requirements` method manually.
 
 - `pip install ci/requirements.txt` (virtualenv recommended)
 - `mkdir build && cd build`
@@ -93,3 +95,11 @@ To run CI locally:
 - `./ci/format.sh <--fix|--check>` fixes or checks formatting of all C++ code
 - `./ci/clang-tidy.sh` builds the code with Clang Tidy
 - `./ci/sanitizer.sh <address|thread|undefined>` builds the code and runs the tests with the chosen sanitizer
+
+## Conan
+
+To create a conan package:
+
+```txt
+conan create src
+```
