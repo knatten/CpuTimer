@@ -27,3 +27,4 @@ target_include_directories(CpuTimer INTERFACE include)
 
 add_subdirectory(test)
 add_subdirectory(benchmarking)
+add_subdirectory(examples)
