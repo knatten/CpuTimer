@@ -8,8 +8,8 @@ C++11 header only timer library (`clock_gettime` wrapper)
 Allows you to measure
 
 - Real time spent
-- CPU time spent
-- Thread time spent
+- CPU time spent by this process
+- CPU time spent by this thread
 
 Only tested on Linux and macOS
 
